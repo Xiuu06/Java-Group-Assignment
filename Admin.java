@@ -1,16 +1,16 @@
-public class Customer extends User {
+public class Admin extends Staff {
 
-    public Customer(int userId, String name, String email) {
+    public Admin(int userId, String name, String email) {
         super(userId, name, email);
     }
 
     @Override
     public String getRole() {
-        return "Customer";
+        return "Admin";
     }
 
-    public void displayCustomer() {
-        System.out.println("Customer ID: " + getUserId());
+    public void displayAdmin() {
+        System.out.println("Admin ID: " + getUserId());
         System.out.println("Name: " + getName());
         System.out.println("Email: " + getEmail());
         System.out.println("Role: " + getRole());
