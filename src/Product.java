@@ -14,8 +14,9 @@ public class Product {
     public Product(int productId, String productName, double price, int stockQuantity) {
         this.productId = productId;
         this.productName = productName;
-        this.price = price;
-        this.stockQuantity = stockQuantity;
+
+        setPrice(price);
+        setStockQuantity(stockQuantity);
     }
 
     // Getter for productId
@@ -77,7 +78,7 @@ public class Product {
 
     // Check whether product has low stock
     public boolean isLowStock(int threshold) {
-        return stockQuantity <= threshold;
+        return stockQuantity < threshold;
     }
 
     // Display product information
