@@ -3,53 +3,67 @@ public class Order {
     private static int orderCounter = 1000;
 
     //Private fields (Encapsulation)
-    private String orderId;
-    private Customer customer;       // has-a Customer
-    private OrderItem[] items;       // array of objects (composition)
-    private int itemCount;           // current number of items stored
-    private String status;           // PENDING / PAID / SHIPPED / CANCELLED
+    private int orderID;
+    private Customer customer;
+    private OrderItem[] items;      // array of objects (composition)
+    private int itemCount;          // current number of items
+    private String status;          // PENDING / PAID / SHIPPED / CANCELLED
+    private String orderDate;
     private double totalAmount;
 
-    //Valid statuses
+    //Constants
+    private static final int MAX_ITEMS = 20;
     private static final String[] VALID_STATUSES = {"PENDING", "PAID", "SHIPPED", "CANCELLED"};
 
-    //Constructor
-    public Order(Customer customer, int maxItems) {
+    //Default constructor
+    public Order() {
+        this.orderID = ++orderCounter;
+        this.customer = null;
+        this.items = new OrderItem[MAX_ITEMS];
+        this.itemCount = 0;
+        this.status = "PENDING";
+        this.orderDate = java.time.LocalDate.now().toString();
+        this.totalAmount = 0.0;
+    }
+
+    //Parameterized constructor
+    public Order(int orderID, Customer customer) {
         if (customer == null) {
             throw new IllegalArgumentException("Customer cannot be null.");
         }
-        if (maxItems <= 0) {
-            throw new IllegalArgumentException("Max items must be greater than 0.");
-        }
-        this.orderId = "ORD" + (++orderCounter);
+        this.orderID = orderID;
         this.customer = customer;
-        this.items = new OrderItem[maxItems];
+        this.items = new OrderItem[MAX_ITEMS];
         this.itemCount = 0;
         this.status = "PENDING";
+        this.orderDate = java.time.LocalDate.now().toString();
         this.totalAmount = 0.0;
     }
 
     //Core Operations
-    public boolean addItem(Product product, int quantity) {
+
+    //Adds an OrderItem to the order.
+    //UML: addItem(OrderItem) : void
+    public void addItem(OrderItem item) {
+        if (item == null) {
+            System.out.println(">> Error: OrderItem cannot be null.");
+            return;
+        }
         if (itemCount >= items.length) {
             System.out.println(">> Order is full. Cannot add more items.");
-            return false;
+            return;
         }
-        try {
-            items[itemCount] = new OrderItem(product, quantity);
-            itemCount++;
-            calculateTotal();
-            return true;
-        } catch (IllegalArgumentException e) {
-            System.out.println(">> Error: " + e.getMessage());
-            return false;
-        }
+        items[itemCount] = item;
+        itemCount++;
+        calculateTotal();
     }
 
-    public boolean removeItem(int productId) {                       
+    //Removes an item by product ID.
+    //UML: removeItem(int) : boolean
+    public boolean removeItem(int productId) {
         for (int i = 0; i < itemCount; i++) {
-            if (items[i].getProduct().getProductId() == productId) { 
-                // shift elements left
+            if (items[i].getProduct().getProductId() == productId) {
+                // shift remaining elements left
                 for (int j = i; j < itemCount - 1; j++) {
                     items[j] = items[j + 1];
                 }
@@ -64,63 +78,73 @@ public class Order {
         return false;
     }
 
-    public OrderItem findItem(int productId) {                       
-        for (int i = 0; i < itemCount; i++) {
-            if (items[i].getProduct().getProductId() == productId) { 
-                return items[i];
-            }
-        }
-        return null;
-    }
-
-    public void calculateTotal() {
+    //Recalculates the total by summing all item subtotals.
+    //UML: calculateTotal() : double
+    public double calculateTotal() {
         double total = 0.0;
         for (int i = 0; i < itemCount; i++) {
-            total += items[i].getSubtotal();
+            total += items[i].calculateSubtotal();
         }
         this.totalAmount = total;
+        return total;
     }
-
-    public boolean updateStatus(String newStatus) {
+    //Updates order status with validation
+    //UML: updateStatus(String) : void
+    public void updateStatus(String newStatus) {
+        if (newStatus == null) {
+            System.out.println(">> Invalid status: null");
+            return;
+        }
         String upper = newStatus.toUpperCase();
         for (String s : VALID_STATUSES) {
             if (s.equals(upper)) {
                 if (this.status.equals("SHIPPED") && !upper.equals("SHIPPED")) {
                     System.out.println(">> Cannot change status after SHIPPED.");
-                    return false;
+                    return;
                 }
                 this.status = upper;
                 System.out.println(">> Status updated to " + upper);
-                return true;
+                return;
             }
         }
         System.out.println(">> Invalid status: " + newStatus);
-        return false;
     }
-
+    //Displays full order details
+    //UML: displayOrder() : void
     public void displayOrder() {
         System.out.println("\n========================================");
-        System.out.println(" Order ID : " + orderId);
-        System.out.println(" Customer : " + customer.getName());
-        System.out.println(" Status   : " + status);
+        System.out.println(" Order ID   : " + orderID);
+        System.out.println(" Customer   : " + (customer != null ? customer.getName() : "N/A"));
+        System.out.println(" Status     : " + status);
+        System.out.println(" Order Date : " + orderDate);
         System.out.println("----------------------------------------");
         if (itemCount == 0) {
             System.out.println(" (No items in this order)");
         } else {
             for (int i = 0; i < itemCount; i++) {
-                System.out.println(" " + (i + 1) + ". " + items[i]);
+                System.out.print(" " + (i + 1) + ". ");
+                items[i].displayItem();
             }
         }
         System.out.println("----------------------------------------");
-        System.out.printf(" TOTAL    : RM %.2f%n", totalAmount);
+        System.out.printf (" TOTAL      : RM %.2f%n", totalAmount);
         System.out.println("========================================");
     }
 
     //Getters
-    public String getOrderId()      { return orderId; }
-    public Customer getCustomer()   { return customer; }
-    public OrderItem[] getItems()   { return items; }
-    public int getItemCount()       { return itemCount; }
-    public String getStatus()       { return status; }
-    public double getTotalAmount()  { return totalAmount; }
+    public int getOrderID()          { return orderID; }
+    public Customer getCustomer()    { return customer; }
+    public OrderItem[] getItems()    { return items; }
+    public int getItemCount()        { return itemCount; }
+    public String getStatus()        { return status; }
+    public String getOrderDate()     { return orderDate; }
+    public double getTotalAmount()   { return totalAmount; }
+
+    //Setters
+    public void setCustomer(Customer customer) {
+        if (customer == null) {
+            throw new IllegalArgumentException("Customer cannot be null.");
+        }
+        this.customer = customer;
+    }
 }

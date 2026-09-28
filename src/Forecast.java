@@ -1,128 +1,100 @@
 public class Forecast {
+    //Private fields
+    private Product product;        // has-a Product
+    private double[] salesData;     // e.g. past 6 months of sales
 
-    //Fields
-    private Order[] orders;     // aggregation (references to existing orders)
-    private int orderCount;
-    private double growthFactor; // e.g. 1.1 = 10% growth assumption
+    //Default constructor
+    public Forecast() {
+        this.product = null;
+        this.salesData = new double[0];
+    }
 
-    //Constructor
-    public Forecast(Order[] orders, int orderCount, double growthFactor) {
-        if (orders == null) {
-            throw new IllegalArgumentException("Orders array cannot be null.");
+    //Parameterized constructor
+    public Forecast(Product product, double[] salesData) {
+        if (product == null) {
+            throw new IllegalArgumentException("Product cannot be null.");
         }
-        this.orders = orders;
-        this.orderCount = orderCount;
-        this.growthFactor = growthFactor;
-    }
-
-    // Overloaded constructor with default growth factor
-    public Forecast(Order[] orders, int orderCount) {
-        this(orders, orderCount, 1.1);
-    }
-
-    //Core Analysis Methods
-    public int getTotalSold(int productId) {                       
-        int total = 0;
-        for (int i = 0; i < orderCount; i++) {
-            OrderItem[] items = orders[i].getItems();
-            int count = orders[i].getItemCount();
-            for (int j = 0; j < count; j++) {
-                if (items[j].getProduct().getProductId() == productId) { 
-                    total += items[j].getQuantity();
-                }
-            }
+        if (salesData == null) {
+            throw new IllegalArgumentException("Sales data cannot be null.");
         }
-        return total;
+        this.product = product;
+        this.salesData = salesData;
     }
 
-    public double getAverageOrderValue() {
-        if (orderCount == 0) return 0.0;
+    //Core Methods
+
+    //Calculates the average sales across all recorded periods.
+    //UML: calculateAverageSales() : double
+    public double calculateAverageSales() {
+        if (salesData == null || salesData.length == 0) {
+            return 0.0;
+        }
         double total = 0.0;
-        for (int i = 0; i < orderCount; i++) {
-            total += orders[i].getTotalAmount();
+        for (int i = 0; i < salesData.length; i++) {
+            total += salesData[i];
         }
-        return total / orderCount;
+        return total / salesData.length;
     }
 
-    public int getTopSellingProductId() {                           
-        if (orderCount == 0) return -1;
-
-        int topId = -1;
-        int topQty = 0;
-
-        for (int i = 0; i < orderCount; i++) {
-            OrderItem[] items = orders[i].getItems();
-            int count = orders[i].getItemCount();
-            for (int j = 0; j < count; j++) {
-                int pid = items[j].getProduct().getProductId();     
-                int qty = getTotalSold(pid);
-                if (qty > topQty) {
-                    topQty = qty;
-                    topId = pid;
-                }
-            }
-        }
-        return topId;
+    //Predicts next period's demand.
+    //Simple model: average sales × 1.1 (10% growth assumption).
+    //UML: calculateForecast() : double
+    public double calculateForecast() {
+        double average = calculateAverageSales();
+        return average * 1.1;
     }
 
-    public int predictNextMonthDemand(int productId) {             
-        if (orderCount == 0) return 0;
-        int totalSold = getTotalSold(productId);
-        double avgPerOrder = (double) totalSold / orderCount;
-        return (int) Math.ceil(avgPerOrder * growthFactor);
-    }
-
-    public void generateReport() {
+    //Displays a formatted forecast report.
+    //UML: displayForecast() : void
+    public void displayForecast() {
         System.out.println("\n========================================");
         System.out.println("       DEMAND FORECAST REPORT");
         System.out.println("========================================");
 
-        if (orderCount == 0) {
-            System.out.println(" No order data available.");
+        if (product == null) {
+            System.out.println(" No product assigned.");
             System.out.println("========================================");
             return;
         }
 
-        System.out.println(" Total Orders Analysed : " + orderCount);
-        System.out.printf (" Average Order Value   : RM %.2f%n", getAverageOrderValue());
-        System.out.println(" Growth Factor Applied : " + growthFactor + "x");
+        System.out.println(" Product       : " + product.getProductName());
+        System.out.println(" Product ID    : " + product.getProductId());
+        System.out.printf (" Current Price : RM %.2f%n", product.getPrice());
+        System.out.println("----------------------------------------");
 
-        int topId = getTopSellingProductId();
-        System.out.println(" Top Selling Product   : P" + topId
-                + " (" + getTotalSold(topId) + " units)");
+        if (salesData == null || salesData.length == 0) {
+            System.out.println(" No sales data available.");
+            System.out.println("========================================");
+            return;
+        }
+
+        System.out.println(" Historical Sales Data:");
+        for (int i = 0; i < salesData.length; i++) {
+            System.out.printf("   Period %d : %.2f units%n", (i + 1), salesData[i]);
+        }
 
         System.out.println("----------------------------------------");
-        System.out.println(" Predicted Demand (Next Month):");
-
-        // Collect unique product IDs from all orders
-        int[] seenIds = new int[100];
-        int seenCount = 0;
-
-        for (int i = 0; i < orderCount; i++) {
-            OrderItem[] items = orders[i].getItems();
-            int count = orders[i].getItemCount();
-            for (int j = 0; j < count; j++) {
-                int pid = items[j].getProduct().getProductId();     
-                boolean alreadySeen = false;
-                for (int k = 0; k < seenCount; k++) {
-                    if (seenIds[k] == pid) { alreadySeen = true; break; } 
-                }
-                if (!alreadySeen) {
-                    seenIds[seenCount++] = pid;
-                    System.out.printf("  P%-9d -> %d units%n",
-                            pid, predictNextMonthDemand(pid));
-                }
-            }
-        }
+        System.out.printf (" Average Sales       : %.2f units%n", calculateAverageSales());
+        System.out.printf (" Predicted Forecast  : %.2f units (next period)%n", calculateForecast());
         System.out.println("========================================");
     }
 
-    //Getters / Setters
-    public double getGrowthFactor() { return growthFactor; }
-    public void setGrowthFactor(double growthFactor) {
-        if (growthFactor <= 0) {
-            throw new IllegalArgumentException("Growth factor must be positive.");
+    //Getters
+    public Product getProduct()      { return product; }
+    public double[] getSalesData()   { return salesData; }
+
+    //Setters
+    public void setProduct(Product product) {
+        if (product == null) {
+            throw new IllegalArgumentException("Product cannot be null.");
         }
-        this.growthFactor = growthFactor;
+        this.product = product;
+    }
+
+    public void setSalesData(double[] salesData) {
+        if (salesData == null) {
+            throw new IllegalArgumentException("Sales data cannot be null.");
+        }
+        this.salesData = salesData;
     }
 }
