@@ -18,7 +18,7 @@ public class Main {
         Customer customer = new Customer(301, "David", "david@gmail.com");
         users[2] = customer;
 
-        Order order = new Order(1001, customer);
+        Order order = null;
 
         boolean running = true;
         while (running) {
@@ -45,18 +45,41 @@ public class Main {
                     inventory.checkLowStock();
                     break;
                 case 7:
-                    createOrder(order, inventory);
+                    order = createNewOrder(customer);
                     break;
                 case 8:
-                    order.displayOrder();
+                    if (order == null) {
+                        System.out.println("Please create an order first.");
+                        break;
+                    }
+                    createOrder(order, inventory);
                     break;
                 case 9:
-                    updateOrderStatus(order);
+                    if (order == null) {
+                        System.out.println("Please create an order first.");
+                        break;
+                    }
+                    removeItemFromOrder(order);
                     break;
                 case 10:
-                    showForecast(inventory);
+                    if (order == null) {
+                        System.out.println("Please create an order first.");
+                        break;
+                    }
+
+                    order.displayOrder();
                     break;
                 case 11:
+                    if (order == null) {
+                        System.out.println("Please create an order first.");
+                        break;
+                    }
+                    updateOrderStatus(order);
+                    break;
+                case 12:
+                    showForecast(inventory);
+                    break;
+                case 13:
                     displayUsers(users);
                     break;
                 case 0:
@@ -64,7 +87,7 @@ public class Main {
                     System.out.println("Thank you for using the system.");
                     break;
                 default:
-                    System.out.println("Invalid choice. Please enter 0-11.");
+                    System.out.println("Invalid choice. Please enter 0-13.");
             }
         }
 
@@ -81,11 +104,13 @@ public class Main {
         System.out.println("4. Update Product");
         System.out.println("5. Remove Product");
         System.out.println("6. Check Low Stock");
-        System.out.println("7. Add Item to Order");
-        System.out.println("8. Display Order");
-        System.out.println("9. Update Order Status");
-        System.out.println("10. Forecast Product Demand");
-        System.out.println("11. Display Users / Polymorphism");
+        System.out.println("7. Create New Order");
+        System.out.println("8. Add Item to Order");
+        System.out.println("9. Remove Item from Order");
+        System.out.println("10. Display Order");
+        System.out.println("11. Update Order Status");
+        System.out.println("12. Forecast Product Demand");
+        System.out.println("13. Display Users / Polymorphism");
         System.out.println("0. Exit");
     }
 
@@ -167,6 +192,21 @@ public class Main {
         inventory.removeProduct(id);
     }
 
+    private static Order createNewOrder(Customer customer) {
+    int orderId = readInt("Enter Order ID: ");
+
+    String orderDate = readString("Enter Order Date (DD/MM/YYYY): ");
+
+    Order newOrder = new Order(orderId, customer);
+    newOrder.setOrderDate(orderDate);
+
+    System.out.println("New order created successfully.");
+    System.out.println("Order ID: " + orderId);
+    System.out.println("Order Date: " + orderDate);
+
+    return newOrder;
+}
+
     private static void createOrder(Order order, Inventory inventory) {
         int productId = readInt("Enter Product ID to add to order: ");
         Product product = inventory.searchProduct(productId);
@@ -188,8 +228,23 @@ public class Main {
         OrderItem item = new OrderItem(product, quantity);
         order.addItem(item);
         product.updateStock(-quantity);
+        inventory.checkLowStock();
         System.out.println("Item added to order successfully.");
         System.out.printf("Current order total: RM %.2f%n", order.calculateTotal());
+    }
+
+    private static void removeItemFromOrder(Order order) {
+        int productId = readInt("Enter Product ID to remove from order: ");
+
+        boolean removed = order.removeItem(productId);
+
+        if (removed) {
+            System.out.println("Item removed from order successfully.");
+            System.out.println("Stock has been restored.");
+            System.out.printf("Current order total: RM %.2f%n", order.calculateTotal());
+        } else {
+            System.out.println("Product not found in the order.");
+        }
     }
 
     private static void updateOrderStatus(Order order) {
@@ -205,7 +260,18 @@ public class Main {
             return;
         }
 
-        double[] salesData = {10, 12, 15, 14, 16, 18};
+       double[] salesData;
+
+        if (productId == 101) {
+            salesData = new double[]{10, 12, 15, 14, 16, 18};
+        } else if (productId == 102) {
+            salesData = new double[]{20, 22, 19, 24, 25, 27};
+        } else if (productId == 103) {
+            salesData = new double[]{8, 10, 9, 11, 13, 12};
+        } else {
+            salesData = new double[]{5, 6, 7, 6, 8, 9};
+        }
+        
         Forecast forecast = new Forecast(product, salesData);
         forecast.displayForecast();
     }

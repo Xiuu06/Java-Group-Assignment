@@ -42,16 +42,23 @@ public class Order {
     public boolean removeItem(int productId) {
         for (int i = 0; i < itemCount; i++) {
             if (items[i].getProduct().getProductId() == productId) {
-                for (int j = i; j < itemCount - 1; j++) items[j] = items[j + 1];
-                items[--itemCount] = null;
+
+                items[i].getProduct().updateStock(items[i].getQuantity());
+
+                for (int j = i; j < itemCount - 1; j++) {
+                    items[j] = items[j + 1];
+                }
+
+                items[itemCount - 1] = null;
+                itemCount--;
                 calculateTotal();
-                System.out.println(">> Item removed successfully.");
                 return true;
             }
         }
-        System.out.println(">> Item not found: " + productId);
-        return false;
-    }
+
+    System.out.println(">> Item not found: " + productId);
+    return false;
+}
 
     public double calculateTotal() {
         double total = 0.0;
@@ -61,7 +68,11 @@ public class Order {
     }
 
     public void updateStatus(String newStatus) {
-        if (newStatus == null) { System.out.println(">> Invalid status: null"); return; }
+        if (newStatus == null) { 
+            System.out.println(">> Invalid status: null"); 
+            return; 
+        }
+
         String upper = newStatus.toUpperCase();
         for (String valid : VALID_STATUSES) {
             if (valid.equals(upper)) {
@@ -69,6 +80,15 @@ public class Order {
                     System.out.println(">> Cannot change status after SHIPPED.");
                     return;
                 }
+
+                if (upper.equals("CANCELLED") && !status.equals("CANCELLED")) {
+                    for (int i = 0; i < itemCount; i++) {
+                        items[i].getProduct().updateStock(items[i].getQuantity());
+                    }
+
+                    System.out.println(">> Stock restored for cancelled order.");
+                }
+                
                 status = upper;
                 System.out.println(">> Status updated to " + upper);
                 return;
@@ -97,5 +117,15 @@ public class Order {
     public OrderItem[] getItems() { return items; }
     public int getItemCount() { return itemCount; }
     public String getOrderDate() { return orderDate; }
+
+    public void setOrderDate(String orderDate) {
+        if (orderDate == null || orderDate.trim().isEmpty()) {
+            System.out.println("Order date cannot be empty.");
+            return;
+        }
+
+        this.orderDate = orderDate;
+    }
+
     public double getTotalAmount() { return totalAmount; }
 }
